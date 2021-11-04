@@ -27,73 +27,16 @@
    <widget class="QWidget" name="widget" native="true">
     <property name="geometry">
      <rect>
-      <x>140</x>
-      <y>30</y>
-      <width>421</width>
-      <height>191</height>
+      <x>0</x>
+      <y>-10</y>
+      <width>671</width>
+      <height>591</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="button_2">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="geometry">
-      <rect>
-       <x>170</x>
-       <y>80</y>
-       <width>141</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color: rgb(16, 16, 16);
-color: rgb(255, 255, 255);
-font: 10pt &quot;Papyrus&quot;;</string>
-     </property>
-     <property name="text">
-      <string>Faculty</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="button">
-     <property name="geometry">
-      <rect>
-       <x>-46</x>
-       <y>80</y>
-       <width>121</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color: rgb(16, 16, 16);
-color: rgb(255, 255, 255);
-font: 10pt &quot;Papyrus&quot;;</string>
-     </property>
-     <property name="text">
-      <string>Student</string>
-     </property>
-    </widget>
-    <widget class="QPushButton" name="button_3">
-     <property name="geometry">
-      <rect>
-       <x>79</x>
-       <y>80</y>
-       <width>87</width>
-       <height>22</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color: rgb(16, 16, 16);
-color: rgb(255, 255, 255);
-font: 10pt &quot;Papyrus&quot;;</string>
-     </property>
-     <property name="text">
-      <string>Course Data</string>
-     </property>
-    </widget>
     <widget class="QLabel" name="label">
      <property name="geometry">
       <rect>
-       <x>20</x>
+       <x>160</x>
        <y>20</y>
        <width>311</width>
        <height>41</height>
@@ -112,6 +55,57 @@ background-color: rgb(255, 170, 255);</string>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;North Star Registrations Application&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
+    </widget>
+    <widget class="QWidget" name="">
+     <property name="geometry">
+      <rect>
+       <x>110</x>
+       <y>260</y>
+       <width>411</width>
+       <height>24</height>
+      </rect>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="QPushButton" name="button">
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(16, 16, 16);
+color: rgb(255, 255, 255);
+font: 10pt &quot;Papyrus&quot;;</string>
+        </property>
+        <property name="text">
+         <string>Student</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="button_3">
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(16, 16, 16);
+color: rgb(255, 255, 255);
+font: 10pt &quot;Papyrus&quot;;</string>
+        </property>
+        <property name="text">
+         <string>Course Data</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="button_2">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: rgb(16, 16, 16);
+color: rgb(255, 255, 255);
+font: 10pt &quot;Papyrus&quot;;</string>
+        </property>
+        <property name="text">
+         <string>Faculty</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </widget>
   </widget>
