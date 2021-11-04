@@ -1,16 +1,25 @@
+import sqlite3 as sql
+from typing import Tuple
+import pandas as pd
+import gui
+from PyQt5.QtWidgets import QMainWindow, QApplication, QPushButton, QLineEdit, QLabel, QRadioButton, QMessageBox
+from PyQt5 import QtWidgets
+import sys
+
+
 def main():
-    # Main database stuff here
-    name = 'north_star_school_database.db'
-    conn, curs = open_db(name)
-    #create
-    setup_employees(curs, conn)
-    populate_employees(curs, conn)
-    # select_from(curs)
-    # get_info(cursor, id) # May want to consider including this in GUI
-    app = guiwindow.QApplication(sys.argv)
-    ex = guiwindow.Window(conn, curs)
-    # print(sys.argv)
-    # print(help(guiwindow))
-    sys.exit(app.exec_())
+    app = QApplication(sys.argv)
+    # widget = QtWidgets.QStackedWidget()
+    mainwindow = gui.MainWindow()
+    mainwindow.setFixedHeight(601)
+    mainwindow.setFixedWidth(665)    
+    mainwindow.show()
+    # print(widget.currentIndex())
+    # print(widget.count())
+
+    try:
+        sys.exit(app.exec_())
+    except:
+        print("Exiting")
 
 main()
