@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets
 import sys
 
 
+#This here is a test push to the DB from Nate
 def main():
     app = QApplication(sys.argv)
     main_window = gui.MainWindow()
