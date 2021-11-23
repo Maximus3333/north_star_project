@@ -214,6 +214,7 @@ class DeleteFacultyWindow(QWidget):
         self.input_box.resize(200, 30)
         self.input_box.move(200, 200)
 
+        #Test comment
         # Delete faculty Button
         self.delete_faculty_button.resize(100, 50)
         self.delete_faculty_button.move(245, 300)
