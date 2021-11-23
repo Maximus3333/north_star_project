@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QApplication, QPushButt
     QMessageBox, QWidget, QDialog, QInputDialog
 import pandas as pd
 import popup
+import faculty_window_flow
 import sys
 
 
@@ -115,7 +116,7 @@ class MainWindow(QMainWindow):
         self.close()
 
     def faculty_button_clicked(self):
-        self.faculty_main_window = FacultyMainWindow()
+        self.faculty_main_window = faculty_window_flow.FacultyMainWindow()
         self.faculty_main_window.show()
         self.close()
 
@@ -249,64 +250,6 @@ class CourseMainWindow(QWidget):
         self.previous_window.show()
         self.close()
 
-
-class FacultyMainWindow(QWidget):
-    def __init__(self):
-        super(FacultyMainWindow, self).__init__()
-
-        self.title = QLabel(self)
-        self.add_faculty_button = QPushButton(self)
-        self.update_faculty_info_button = QPushButton(self)
-        self.delete_faculty_button = QPushButton(self)
-
-        self.back_button = QPushButton(self)
-
-        self.setup_ui()
-
-    def setup_ui(self):
-        # Window
-        self.resize(600, 500)
-        window_width = int(self.frameGeometry().width())
-        self.setWindowTitle("Faculty Main Window")
-
-        # Title
-        self.title.setText("Please select a Faculty option")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
-        self.title.adjustSize()
-        self.title.setAlignment(QtCore.Qt.AlignCenter)
-        self.title.move(int((window_width - self.title.width()) / 2), 100)
-
-        # Add Button
-        self.add_faculty_button.resize(100, 50)
-        self.add_faculty_button.move(145, 300)
-        self.add_faculty_button.setText('Add')
-
-        # Update Button
-        self.update_faculty_info_button.resize(100, 50)
-        self.update_faculty_info_button.move(250, 300)
-        self.update_faculty_info_button.setText('Update')
-
-        # Delete Button
-        self.delete_faculty_button.resize(100, 50)
-        self.delete_faculty_button.move(355, 300)
-        self.delete_faculty_button.setText('Delete')
-
-        # Back Button
-        self.back_button.resize(50, 35)
-        self.back_button.move(30, 30)
-        self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
-
-        # Signals/Slots
-        # self.add_faculty_button.clicked.connect()
-        # self.update_faculty_button.clicked.connect()
-        # self.delete_faculty_button.clicked.connect()
-        self.back_button.clicked.connect(self.back_button_clicked)
-
-    def back_button_clicked(self):
-        self.previous_window = MainWindow()
-        self.previous_window.show()
-        self.close()
 
 
 """Might need the code below in the future"""
