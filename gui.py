@@ -23,8 +23,14 @@ import sys
 class Student:
     def __init__(self):
 
-        self.StudentID = 0
+        self.studentid = 0
         self.name = 'none'
+
+    def update_student_id(self, studentid):
+        self.studentid = studentid
+
+    def update_student_name(self, name):
+        self.name = name
 
 class Course:
     def __init__(self):
@@ -51,8 +57,7 @@ class Enrollment:
     def __init__(self):
 
         self.student_id = 'none'
-        self.course_id = 'none'
-        self.section_id = 'none'
+        self.course_section_id = 'none'
         self.over_cred_flag = 0
         self.over_cap_flag = 0
 
