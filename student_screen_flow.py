@@ -1,16 +1,14 @@
 import sqlite3
 from functools import partial
 from PyQt5.QtGui import *
-from PyQt5.uic import loadUi
 from PyQt5.QtCore import *
 from PyQt5 import QtWidgets, QtCore
-from PyQt5.QtWidgets import QMainWindow, QDesktopWidget, QApplication, QPushButton, QLineEdit, QLabel, QRadioButton, \
-    QMessageBox, QWidget, QDialog, QInputDialog, QToolButton, QSizePolicy
-import pandas as pd
-import course
+from PyQt5.QtWidgets import QPushButton, QLineEdit, QLabel, \
+    QWidget, QDialog, QSizePolicy, QGridLayout, QTableWidget, QTableWidgetItem, \
+    QVBoxLayout
 import popup
 import gui
-import sys
+
 
 
 
@@ -128,6 +126,169 @@ class PrintWindow(QWidget):
     def __init__(self):
         super(PrintWindow, self).__init__()
 
+        self.student_id = QLabel(self)
+        self.student_name = QLabel(self)
+        self.table_info = QTableWidget()
+        self.student_id_label = QLabel(self)
+        self.student_name_label = QLabel(self)
+        self.student_semester_credit = QLabel(self)
+        self.student_semester_credit_label = QLabel(self)
+
+        self.setup_ui()
+
+    def setup_ui(self):
+        self.resize(1000, 500)
+
+        self.student_id_label.setText("ID:")
+        self.student_id_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_id_label.adjustSize()
+        self.student_id_label.move(40, 50)
+        self.student_id.setText(student.studentid)
+        self.student_id.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_id.adjustSize()
+        self.student_id.move(self.student_id_label.width()+45, 50)
+
+        self.student_name_label.setText("Name:")
+        self.student_name_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_name_label.adjustSize()
+        self.student_name_label.move(40, 85)
+        self.student_name.setText(self.query_student_id_and_name())
+        self.student_name.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_name.adjustSize()
+        self.student_name.move(self.student_name_label.width()+45, 85)
+        self.setWindowTitle(f"{self.student_name} Semester Information")
+
+
+        self.totalcredits = 0
+        self.course_section_ids_and_flags = self.query_student_courses()
+        self.table_info.setRowCount(len(self.course_section_ids_and_flags))
+        self.table_info.setColumnCount(6)
+        columns = ['CourseSecID', 'Flags', 'Instructor Name', 'CourseID', 'CourseDescription', 'Credits']
+        self.table_info.setHorizontalHeaderLabels(columns)
+        x = 0
+        y = 0
+        print(self.course_section_ids_and_flags[0])
+        for course_sections in self.course_section_ids_and_flags:
+            course_section = course_sections[0]
+            course_flag = course_sections[1]
+            self.table_info.setItem(y,x, QTableWidgetItem(course_section))
+            x+=1
+            print(type(course_flag))
+            self.table_info.setItem(y, x, QTableWidgetItem(str(course_flag)))
+            self.course_id_and_instructor_id = self.query_course_section_instr_and_course_id(course_section)
+            print(self.course_id_and_instructor_id)
+            for course_and_instr_id in self.course_id_and_instructor_id:
+                course_id = course_and_instr_id[0]
+                instructor_id = course_and_instr_id[1]
+                instructor_name = self.query_instr_name(instructor_id)[0]
+                x+=1
+                self.table_info.setItem(y, x, QTableWidgetItem(instructor_name))
+                x+=1
+                self.table_info.setItem(y, x, QTableWidgetItem(course_id))
+                self.course_desc_credit = self.query_course_descr_credit(course_id)
+                print(self.course_desc_credit)
+                descr = self.course_desc_credit[0]
+                credit = self.course_desc_credit[1]
+                self.totalcredits += credit
+                x+=1
+                self.table_info.setItem(y, x, QTableWidgetItem(descr))
+                x+=1
+                self.table_info.setItem(y, x, QTableWidgetItem(str(credit)))
+
+            y += 1
+            x = 0
+
+        self.student_semester_credit_label.setText("Registered credits:")
+        self.student_semester_credit_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_semester_credit_label.adjustSize()
+        self.student_semester_credit_label.move(40, 120)
+
+        self.student_semester_credit.setText(str(self.totalcredits))
+        self.student_semester_credit.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_semester_credit.adjustSize()
+        self.student_semester_credit.move(self.student_semester_credit_label.width()+45, 120)
+
+        header = self.table_info.horizontalHeader()
+        print(self.table_info.columnCount()-1)
+        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        for column in range(self.table_info.columnCount()-1):
+            column +=1
+            header.setSectionResizeMode(column, QtWidgets.QHeaderView.ResizeToContents)
+        self.layout = QVBoxLayout()
+        self.table_info.adjustSize()
+        self.layout.addStretch()
+        self.layout.addWidget(self.table_info)
+        self.setLayout(self.layout)
+
+
+    def query_course_descr_credit(self, course_id):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.look_up_course_descr_credit = cursor.execute(
+                """SELECT course_desc, credit FROM course WHERE course_id = ?""",
+                (course_id,)).fetchone()
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
+
+        return self.look_up_course_descr_credit
+
+    def query_instr_name(self, instructor_id):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.look_up_instr_name = cursor.execute(
+                """SELECT instructor_name FROM instructor WHERE instructor_id = ?""",
+                (instructor_id,)).fetchone()
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
+
+        return self.look_up_instr_name
+
+    def query_course_section_instr_and_course_id(self, course_section_id):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.look_up_student_instr_and_course = cursor.execute(
+                """SELECT course_id, instructor_id FROM section WHERE course_section_id = ?""",
+                (course_section_id,)).fetchall()
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
+
+        return self.look_up_student_instr_and_course
+
+
+    def query_student_courses(self):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.look_up_student_courses = cursor.execute("""SELECT course_section_id, flags FROM enrollment WHERE student_id = ?""", (student.studentid,)).fetchall()
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
+
+        return self.look_up_student_courses
+
+    def query_student_id_and_name(self):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.look_up_student = cursor.execute(
+                """SELECT student_name FROM student WHERE student_id = ?""", (student.studentid,)).fetchone()[0]
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
+
+        return self.look_up_student
+
 class MaintainStudentAccount(QDialog):
     def __init__(self):
         super(MaintainStudentAccount, self).__init__()
@@ -137,34 +298,38 @@ class MaintainStudentAccount(QDialog):
         self.access_student_flags_btn = QPushButton(self)
         self.print_student_info_btn = QPushButton(self)
         self.back_button = QPushButton(self)
+        self.title = QLabel(self)
 
         self.setup_ui()
 
     def setup_ui(self):
 
         self.resize(600, 500)
+        self.setWindowTitle("StudentPortalWindow")
+        self.title.setText("Choose a Student Option Below")
+        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.adjustSize()
+        self.title.move((600-self.title.width())/2, 80)
 
         # self.widget = QWidget(self)
         # self.widget.resize(500, 300)
 
         self.add_course_to_schedule_btn.setText('Add Course to \n Student Schedule')
-        self.add_course_to_schedule_btn.adjustSize()
-        self.add_course_to_schedule_btn.move(60, 250)
         self.add_course_to_schedule_btn.resize(130, 60)
+        self.add_course_to_schedule_btn.move(60, 250)
         self.add_course_to_schedule_btn.clicked.connect(self.add_course_student_schedule_pop_up)
 
+        self.print_student_info_btn.setText('Add Preview \n Student Info')
+        self.print_student_info_btn.resize(130, 60)
+        self.print_student_info_btn.move(self.width() - (self.print_student_info_btn.width() + 60), 250)
+        self.print_student_info_btn.clicked.connect(self.print_student_info)
+
         self.access_student_flags_btn.setText('Access Student \n Flags')
-        self.access_student_flags_btn.adjustSize()
+        self.access_student_flags_btn.resize(130, 60)
         self.access_student_flags_btn.move(((self.width()-(self.add_course_to_schedule_btn.width()+self.print_student_info_btn.width()+120
                                             +self.access_student_flags_btn.width()))/2)+60+self.add_course_to_schedule_btn.width(), 250)
-        self.access_student_flags_btn.resize(130, 60)
+        print(self.print_student_info_btn.width())
         self.access_student_flags_btn.clicked.connect(self.access_student_flags_popup)
-
-        self.print_student_info_btn.setText('Add Preview \n Student Info')
-        self.print_student_info_btn.adjustSize()
-        self.print_student_info_btn.move(self.width()-(self.print_student_info_btn.width()+60), 250)
-        self.print_student_info_btn.resize(130, 60)
-        print(self.print_student_info_btn.pos())
 
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
@@ -176,7 +341,9 @@ class MaintainStudentAccount(QDialog):
         self.show()
 
     def print_student_info(self):
-        pass
+        self.window = PrintWindow()
+        self.window.show()
+        self.close()
 
     def add_course_student_schedule_pop_up(self):
         self.window = AddCourseToStudentScheduleWindow()
@@ -198,7 +365,7 @@ class CourseFlagsWindow(QWidget):
         super(CourseFlagsWindow, self).__init__()
 
         self.title = QLabel(self)
-        self.course_section_id = 'none'
+        self.course_section_id = enrollment.course_section_id
         self.course_section_id_label = QLabel(self)
         self.credit_flag = QLabel(self)
         self.capacity_flag = QLabel(self)
@@ -217,9 +384,11 @@ class CourseFlagsWindow(QWidget):
         self.window_title = 'View Section Flags Window'
         self.setWindowTitle(self.window_title)
 
-        self.course_section_id_label.setText('SectionID: ' + self.course_section_id)
+        self.course_section_id_label.setText('SectionID:  ' + self.course_section_id)
         self.course_section_id_label.setFont(QFont('Papyrus', 16, QFont.Bold))
-        self.course_section_id_label.move(150, 50)
+        self.course_section_id_label.adjustSize()
+        print(self.flags)
+        self.course_section_id_label.move((600-self.course_section_id_label.width())/2, 50)
 
 #       0 == no flags 1 == exceeds credit limit 2 == exceeds course capacity
         if self.flags == 3:
@@ -251,7 +420,8 @@ class CourseFlagsWindow(QWidget):
             self.remove_capacity_flag_btn.setText('Remove')
             self.remove_capacity_flag_btn.adjustSize()
             self.remove_capacity_flag_btn.move(450, 200)
-
+        else:
+            self.show_no_flags_mess()
 
         self.remove_credit_flag_btn.clicked.connect(partial(self.remove_flags, 1))
         self.remove_capacity_flag_btn.clicked.connect(partial(self.remove_flags, 2))
@@ -266,6 +436,19 @@ class CourseFlagsWindow(QWidget):
         self.back_button.clicked.connect(self.back_button_clicked)
 
         self.show()
+
+    def show_no_flags_mess(self):
+        self.no_flags_message = QLabel(self)
+        self.no_flags_message.setFont(QFont('Papyrus', 15, QFont.Bold))
+        self.no_flags_message.setText('The registered course has no flags\nin the student account')
+        # self.no_flags_message.move((600 - self.no_flags_message.width()) / 2, 195)
+        self.no_flags_message.setAlignment(Qt.AlignCenter)
+        self.no_flags_message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.layout = QGridLayout(self)
+        self.layout.addWidget(self.no_flags_message, 0, 0)
+
+        self.setLayout(self.layout)
+
     @pyqtSlot(int)
     def remove_flags(self, remove_flag_value):
         try:
@@ -279,6 +462,21 @@ class CourseFlagsWindow(QWidget):
             cursor.execute("""UPDATE enrollment SET flags = ? WHERE student_id = ? AND course_section_id = ?""", (self.new_flag_value, student.studentid, enrollment.course_section_id,))
             print(self.new_flag_value, student.studentid, enrollment.course_section_id)
             print(type(self.new_flag_value), type(student.studentid), type(enrollment.course_section_id))
+            if int(remove_flag_value) == 1:
+                self.remove_credit_flag_btn.close()
+                self.credit_flag.close()
+                self.success_mes = popup.SuccessPopUp(
+                    f"You have successfully removed credit flag")
+                self.success_mes.show()
+                self.show_no_flags_mess()
+            elif int(remove_flag_value) ==2:
+                self.remove_capacity_flag_btn.close()
+                self.capacity_flag.close()
+                self.success_mes = popup.SuccessPopUp(
+                    f"You have successfully removed course capacity flag")
+                self.success_mes.show()
+                self.show_no_flags_mess()
+
 
             conn.commit()
             conn.close()
@@ -364,19 +562,57 @@ class AccessStudentCourseFlagsWindow(QWidget):
         self.previous_window.show()
         self.close()
 
+    def txt_change(self, bool):
+        if bool == 0:
+            self.course_id_textbox.setStyleSheet(
+            "color: black; border: 0px")
+        else:
+            self.section_id_textbox.setStyleSheet(
+                "color: black; border: 0px")
+
+    def check_if_course_section_exist(self, course_and_section_id, student_id):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        self.exist_or_not = cursor.execute(
+            """SELECT EXISTS (SELECT 1 FROM enrollment WHERE course_section_id = ? and student_id = ?)""",
+            (course_and_section_id, student_id,)).fetchone()[0]
+        conn.commit()
+        conn.close()
+        return self.exist_or_not
+
     def course_flags_window(self):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
-        self.course_section_id = self.course_id_textbox.text() + self.section_id_textbox.text()
+        self.course_section_id = (self.course_id_textbox.text() + self.section_id_textbox.text()).upper()
+        self.course_id_textbox.textChanged.connect(partial(self.txt_change, 0))
+        self.section_id_textbox.textChanged.connect(partial(self.txt_change, 1))
         enrollment.course_section_id = self.course_section_id
         try:
-            self.student_course_section_query = cursor.execute(f"""SELECT flags FROM enrollment WHERE student_id = ? AND course_section_id = ? """, (student.studentid, enrollment.course_section_id,)).fetchall()
-            print(type(self.student_course_section_query[0]))
-            print(self.student_course_section_query)
+            self.checking = self.check_if_course_section_exist(self.course_section_id, student.studentid)
+            print(self.checking)
+            print(enrollment.course_section_id)
             print(student.studentid, enrollment.course_section_id)
-            self.window = CourseFlagsWindow(int(self.student_course_section_query[0]))
-            self.window.show()
-            self.close()
+            if self.checking == 1:
+                self.student_course_section_query = cursor.execute(f"""SELECT flags FROM enrollment WHERE student_id = ? AND course_section_id = ? """, (student.studentid, enrollment.course_section_id,)).fetchall()
+                # print(type(self.student_course_section_query[0]))
+                # print(self.student_course_section_query[0][0])
+                # print(student.studentid, enrollment.course_section_id)
+                self.window = CourseFlagsWindow(self.student_course_section_query[0][0])
+                self.window.show()
+                self.close()
+            elif len(self.course_id_textbox.text()) == 0 and len(self.section_id_textbox.text()) == 0:
+                self.course_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                self.section_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.section_id_textbox.text()) == 0:
+                self.section_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.course_id_textbox.text()) == 0:
+                self.course_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif self.checking == 0:
+                self.error_mes = popup.ErrorPopUp(
+                    f"Course section does not exist in student schedule")
+                self.error_mes.show()
+
+
 
         except Exception as e:
             #THROW ERROR HERE
@@ -448,59 +684,120 @@ class AddCourseToStudentScheduleWindow(QWidget):
         self.previous_window.show()
         self.close()
 
+    def txt_change(self, bool):
+        if bool == 0:
+            self.course_id_textbox.setStyleSheet(
+            "color: black; border: 0px")
+        else:
+            self.section_id_textbox.setStyleSheet(
+                "color: black; border: 0px")
+
+    def check_if_course_or_section_exist(self, course_or_section, course_or_section_id):
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        if course_or_section == "course":
+            self.exist_or_not = cursor.execute(
+                """SELECT EXISTS (SELECT 1 FROM course WHERE course_id = ?)""",
+                (course_or_section_id,)).fetchone()[0]
+        else:
+            self.exist_or_not = cursor.execute(
+                """SELECT EXISTS (SELECT 1 FROM section WHERE course_section_id = ?)""",
+                (course_or_section_id,)).fetchone()[0]
+        conn.commit()
+        conn.close()
+        return self.exist_or_not
+
     def add_course_to_student_schedule(self):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
         self.course_id_text = self.course_id_textbox.text()
         self.section_id_text = self.section_id_textbox.text()
         self.course_section_id = self.course_id_text + self.section_id_text
+        self.course_id_textbox.textChanged.connect(partial(self.txt_change, 0))
+        self.section_id_textbox.textChanged.connect(partial(self.txt_change, 1))
 
         try:
             self.classes_student_isregistered = []
             self.student_semester_credit = 0
-            if (self.course_id_text and self.section_id_text) and (self.section_id_text.isnumeric()):
+            if (len(self.course_id_textbox.text()) != 0 and len(self.section_id_textbox.text()) != 0) and (self.section_id_text.isnumeric()):
                 self.look_up_student_courses = cursor.execute("""SELECT course_section_id FROM enrollment WHERE student_id = ?""", (student.studentid,))
                 self.courses = self.look_up_student_courses.fetchall()
-                print(self.courses)
                 for course in self.courses:
                     course = course[0]
-                    print(course)
                     self.look_up_existing_course_credits = cursor.execute("""SELECT credit FROM course WHERE course_id = ?""", (course[:len(course)-3],))
                     self.existing_course_credit = self.look_up_existing_course_credits.fetchone()[0]
                     self.student_semester_credit += self.existing_course_credit
-                    print(self.existing_course_credit)
-                self.look_up_new_course_credits = cursor.execute("""SELECT credit FROM course WHERE course_id = ?""", (self.course_id_text,))
-                self.course_credit = self.look_up_new_course_credits.fetchone()[0]
-                print(self.course_credit)
-                print(self.course_section_id)
-                self.look_up_new_section_capacity = cursor.execute("""SELECT capacity FROM section WHERE course_section_id = ?""", (self.course_section_id,))
-                print(self.course_section_id)
-                # print(self.look_up_new_section_capacity.fetchone()[0])
-                self.course_capacity = self.look_up_new_section_capacity.fetchone()[0]
-                # print(self.course_capacity)
-                self.look_up_populace_of_course = cursor.execute("""SELECT COUNT(course_section_id) FROM enrollment WHERE course_section_id = ?""", (self.course_section_id,))
-                # self.look_up_populace_of_course = cursor.execute(
-                #     """SELECT course_section_id FROM enrollment WHERE course_section_id = ?""",
-                #     (self.course_section_id,))
-                self.current_capacity_of_course = self.look_up_populace_of_course.fetchone()[0]
+                self.course_query_result = self.check_if_course_or_section_exist("course", self.course_id_text.upper())
+                self.section_query_result = self.check_if_course_or_section_exist("section", self.course_section_id.upper())
+                if self.course_query_result == 1 and self.section_query_result == 1:
+                    # print(self.course_query_result)
+                    # print(self.section_query_result)
+                    self.check_if_course_is_registered_to_student = 0
+                    for course in self.courses:
+                        course = course[0]
+                        if self.course_section_id.upper() == course:
+                            self.check_if_course_is_registered_to_student = 1
+                    if self.check_if_course_is_registered_to_student == 0:
+                        self.look_up_new_course_credits = cursor.execute("""SELECT credit FROM course WHERE course_id = ?""", (self.course_id_text.upper(),))
+                        self.course_credit = self.look_up_new_course_credits.fetchone()[0]
+                        self.look_up_new_section_capacity = cursor.execute("""SELECT capacity FROM section WHERE course_section_id = ?""", (self.course_section_id.upper(),))
+                        self.course_capacity = self.look_up_new_section_capacity.fetchone()[0]
+                        self.look_up_populace_of_course = cursor.execute("""SELECT COUNT(course_section_id) FROM enrollment WHERE course_section_id = ?""", (self.course_section_id.upper(),))
+                        self.current_capacity_of_course = self.look_up_populace_of_course.fetchone()[0]
+                        if (self.current_capacity_of_course + 1 > self.course_capacity) and (self.course_credit+self.student_semester_credit > 12):
+                            self.flag = 3
+                        elif (self.current_capacity_of_course + 1 > self.course_capacity):
+                            self.flag = 2
+                        elif (self.course_credit+self.student_semester_credit > 12):
+                            self.flag = 1
+                        else:
+                            self.flag = 0
+                        self.add_course_section_to_schedule = cursor.execute("""INSERT INTO enrollment (student_id, course_section_id, flags) VALUES
+                        (?,?,?)""", (student.studentid, self.course_section_id.upper(), self.flag))
+                    else:
+                        self.error_mes = popup.ErrorPopUp(
+                            f"Course is already registered to student schedule!\nPlease enter a new course ID and section ID")
+                        self.error_mes.show()
+                        self.course_id_textbox.setStyleSheet(
+                            "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                        self.section_id_textbox.setStyleSheet(
+                            "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                elif self.course_query_result == 0:
+                    self.error_mes = popup.ErrorPopUp(f"Course {self.course_id_text.upper()} doesnt exist !\nPlease enter an exisitng course ID")
+                    self.error_mes.show()
+                    self.course_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                elif self.section_query_result == 0:
+                    self.error_mes = popup.ErrorPopUp(
+                        f"Course {self.course_id_text.upper()} with section {self.section_id_text} doesnt exist !\nPlease enter a course ID with an exisitng section ID")
+                    self.error_mes.show()
+                    self.section_id_textbox.setStyleSheet(
+                        "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.course_id_textbox.text()) == 0 and len(self.section_id_textbox.text()) == 0:
+                self.error_mes = popup.ErrorPopUp(
+                    f"Please enter a course ID and section ID")
+                self.error_mes.show()
+                self.course_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                self.section_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.course_id_textbox.text()) == 0:
+                self.error_mes = popup.ErrorPopUp(
+                    f"Please enter a course ID")
+                self.error_mes.show()
+                self.course_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.section_id_textbox.text()) == 0:
+                self.error_mes = popup.ErrorPopUp(
+                    f"Please enter a section ID")
+                self.error_mes.show()
+                self.section_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
 
-                if (self.current_capacity_of_course + 1 > self.course_capacity) and (self.course_credit+self.student_semester_credit > 12):
-                    self.flag = 3
-                elif (self.current_capacity_of_course + 1 > self.course_capacity):
-                    self.flag = 2
-                elif (self.course_credit+self.student_semester_credit > 12):
-                    self.flag = 1
-                else:
-                    self.flag = 0
-                self.b = cursor.execute("""INSERT INTO enrollment (student_id, course_section_id, flags) VALUES
-                (?,?,?)""", (student.studentid, self.course_section_id, self.flag))
-                print(student.studentid)
-                print(self.course_section_id)
-                print(self.flag)
-                conn.commit()
-                conn.close()
         except Exception as e:
             print(e)
+
+        conn.commit()
+        conn.close()
 
 class DeleteStudentWindow(QDialog):
     def __init__(self):
@@ -549,13 +846,41 @@ class DeleteStudentWindow(QDialog):
     def delete_student(self):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
+        cursor.execute("""PRAGMA foreign_keys = ON""")
+        self.student_id_being_deleted = self.input_box.text()
+        self.input_box.textChanged.connect(self.txt_change)
+
         try:
-            self.delete_student_from_table = cursor.execute("""DELETE FROM student WHERE student_id = ?""", (self.input_box.text(),))
+            if self.input_box.text().isnumeric():
+                self.check_id_exists = cursor.execute("""SELECT EXISTS(SELECT 1 FROM student WHERE student_id = ?)""",
+                               (self.student_id_being_deleted,)).fetchone()[0]
+                if self.check_id_exists == 1:
+                    self.delete_student_from_table = cursor.execute("""DELETE FROM student WHERE student_id = ?""", (self.student_id_being_deleted,))
+                    print(self.delete_student_from_table.fetchall())
+                    self.success_mes = popup.SuccessPopUp(
+                        f"You have successfully deleted {self.student_id_being_deleted} \n from North Star Database")
+                    self.success_mes.show()
+                else:
+                    self.error_mes = popup.ErrorPopUp("ID doesnt exist!\nPlease enter an existing ID")
+                    self.error_mes.show()
+                    self.input_box.setStyleSheet(
+                        "color: #fb0410; border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
+            else:
+                self.error_mes = popup.ErrorPopUp("Please enter a correct NUMERIC ID")
+                self.error_mes.show()
+                self.input_box.setStyleSheet(
+                    "color: #fb0410; border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
         except Exception as e:
             print(e)
+
         conn.commit()
         conn.close()
 
+    def txt_change(self):
+        self.input_box.setStyleSheet(
+            "color: black; border: 0px")
 
     def back_button_clicked(self):
         self.previous_window = StudentMainWindow()
@@ -616,45 +941,79 @@ class AccessStudentWindow(QWidget):
         self.show()
 
 
+
     def update_student_window(self):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
+        self.input_box.textChanged.connect(self.txt_change)
         try:
-            self.student_id_query = cursor.execute(f"""SELECT student_id FROM student WHERE student_id = ? """, (self.input_box.text(),)).fetchone()
-            if self.input_box.text().isnumeric() and self.student_id_query[0] == self.input_box.text():
-                self.window = UpdateStudentWindow()
-                # student.StudentID = self.input_box.text()
-                student.update_student_id(self.input_box.text())
-                self.close()
-                self.window.show()
+            if self.input_box.text().isnumeric() and self.input_box.text() != 0:
+                self.student_id_query = cursor.execute(f""" SELECT student_id FROM student WHERE student_id = ? """, (self.input_box.text(),)).fetchone()
+                if self.student_id_query[0] == self.input_box.text():
+                    self.window = UpdateStudentWindow()
+                    student.update_student_id(self.input_box.text())
+                    self.close()
+                    self.window.show()
+            elif not self.input_box.text().isnumeric():
+                self.error_mes = popup.ErrorPopUp("Please enter a correct NUMERIC ID")
+                self.error_mes.show()
+                self.input_box.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif self.input_box.text() == 0:
+                self.error_mes = popup.ErrorPopUp("Please enter the desired ID")
+                self.error_mes.show()
+                self.input_box.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
         except Exception as e:
-            pass
+            print(e)
+            self.error_mes = popup.ErrorPopUp("Student ID doesnt exist!\n\nEnter a new ID")
+            self.error_mes.show()
+            self.input_box.setStyleSheet(
+                "color: #fb0410; border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
+
+        conn.commit()
+        conn.close()
 
 
     def maintain_student_window(self):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
+        self.input_box.textChanged.connect(self.txt_change)
         try:
-            # print(self.input_box.text())
-            # print(type(self.input_box.text()))
-            self.student_id_query = cursor.execute("""SELECT student_id FROM student WHERE student_id = ? """, (self.input_box.text(),)).fetchone()
-            self.student_id_query2 = cursor.execute(f"""SELECT student_id FROM student""").fetchone()
-            print(self.student_id_query)
-            # print(self.input_box.text())
-            # print(type(self.student_id_query2[0]))
-            # print(self.student_id_query2[0])
-            if self.input_box.text().isnumeric() and self.student_id_query[0] == self.input_box.text():
-                print(2)
-                self.window = MaintainStudentAccount()
-                # student.StudentID = self.input_box.text()
-                student.update_student_id(self.input_box.text())
-                self.close()
-                self.window.show()
-            conn.commit()
-            conn.close()
+            if self.input_box.text().isnumeric() and self.input_box.text() != 0:
+                self.student_id_query = cursor.execute(f""" SELECT student_id FROM student WHERE student_id = ? """,
+                                                       (self.input_box.text(),)).fetchone()
+                if self.input_box.text().isnumeric() and self.student_id_query[0] == self.input_box.text():
+                    self.window = MaintainStudentAccount()
+                    student.update_student_id(self.input_box.text())
+                    self.close()
+                    self.window.show()
+            elif not self.input_box.text().isnumeric():
+                self.error_mes = popup.ErrorPopUp("Please enter a correct NUMERIC ID")
+                self.error_mes.show()
+                self.input_box.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
 
+            elif self.input_box.text() == 0:
+                self.error_mes = popup.ErrorPopUp("Please enter the desired ID")
+                self.error_mes.show()
+                self.input_box.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
         except Exception as e:
             print(e)
+            self.error_mes = popup.ErrorPopUp("Student ID doesnt exist!\n\nEnter a new ID")
+            self.error_mes.show()
+            self.input_box.setStyleSheet(
+                "color: #fb0410; border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
+
+        conn.commit()
+        conn.close()
+
+    def txt_change(self):
+        self.input_box.setStyleSheet(
+            "color: black; border: 0px")
 
     def back_button_clicked(self):
         self.previous_window = StudentMainWindow()
@@ -723,20 +1082,53 @@ class AddStudentWindow(QWidget):
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
         self.new_student = Student()
-        print("asda")
+        print(len(self.new_student_id_textbox.text()))
+        self.new_student_id_textbox.textChanged.connect(partial(self.txt_change, 0))
+        self.new_student_name_textbox.textChanged.connect(partial(self.txt_change, 1))
         try:
-            if self.new_student_id_textbox.text().isnumeric() and all((x.isalpha() or x.isspace()) for x in self.new_student_name_textbox.text()):
-                self.check_if_id_exists_in_db = cursor.execute("""SELECT student_id FROM student WHERE student_id = ?""", (self.new_student_id_textbox.text(),))
-                print(self.check_if_id_exists_in_db.fetchone())
-                if self.check_if_id_exists_in_db.fetchone() == None:
-                    self.add_student_to_table = cursor.execute("""INSERT INTO student (student_id, student_name) VALUES (?,?)""", (self.new_student_id_textbox.text(), self.new_student_name_textbox.text()))
+            if len(self.new_student_id_textbox.text()) != 0 and len(self.new_student_name_textbox.text()) != 0 and \
+                    (self.new_student_id_textbox.text().isnumeric() and all((x.isalpha() or x.isspace()) for x in self.new_student_name_textbox.text())):
+
+                self.check_if_id_exists_in_db = cursor.execute("""SELECT EXISTS(SELECT 1 FROM student WHERE student_id = ?)""", (self.new_student_id_textbox.text(),))
+                self.query_result = self.check_if_id_exists_in_db.fetchone()[0]
+                if self.query_result == 0:
+                    self.add_student_to_table = cursor.execute("""INSERT INTO student (student_id, student_name) VALUES (?,?)""", (self.new_student_id_textbox.text(), self.new_student_name_textbox.text().title()))
+                    self.success_mes = popup.SuccessPopUp(
+                        f"You have successfully added {self.new_student_name_textbox.text().title()} \n with the ID: {self.new_student_id_textbox.text()} to the database")
+                    self.success_mes.show()
                 else:
-                    pass
-                # if self.new_student_id_textbox.text()
-                #     self.new_student.update_student_id(self.new_student_id_textbox.text())
-                #     self.new_student.update_student_name(self.new_student_name_textbox.text())
+                    self.error_mes = popup.ErrorPopUp("ID already exists!\nPlease enter a new ID")
+                    self.error_mes.show()
+            elif len(self.new_student_id_textbox.text()) == 0 and len(self.new_student_name_textbox.text()) == 0:
+                self.new_student_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                self.new_student_name_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.new_student_name_textbox.text()) == 0:
+                self.new_student_name_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif len(self.new_student_id_textbox.text()) == 0:
+                self.new_student_id_textbox.setStyleSheet("border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif not self.new_student_id_textbox.text().isnumeric() and not all((x.isalpha() or x.isspace()) for x in self.new_student_name_textbox.text()):
+                self.error_mes = popup.ErrorPopUp("Please enter a correct NUMERIC ID\n and a correct Name")
+                self.error_mes.show()
+                self.new_student_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+                self.new_student_name_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            elif not self.new_student_id_textbox.text().isnumeric():
+                self.error_mes = popup.ErrorPopUp("Please enter a correct NUMERIC ID")
+                self.error_mes.show()
+                self.new_student_id_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+            else:
+                self.error_mes = popup.ErrorPopUp("Please enter a correct Name")
+                self.error_mes.show()
+                self.new_student_name_textbox.setStyleSheet(
+                    "border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
+
+
         except Exception as e:
             pass
+
         conn.commit()
         conn.close()
 
@@ -744,6 +1136,14 @@ class AddStudentWindow(QWidget):
         self.previous_window = StudentMainWindow()
         self.previous_window.show()
         self.close()
+
+    def txt_change(self, bool):
+        if bool == 0:
+            self.new_student_id_textbox.setStyleSheet(
+            "color: black; border: 0px")
+        else:
+            self.new_student_name_textbox.setStyleSheet(
+                "color: black; border: 0px")
 
 class UpdateStudentWindow(QDialog):
     def __init__(self):
@@ -754,10 +1154,7 @@ class UpdateStudentWindow(QDialog):
         self.input_box = QLineEdit(self)
         self.back_button = QPushButton(self)
 
-
-
         self.setup_ui()
-
 
     def setup_ui(self):
         # Window
@@ -776,21 +1173,21 @@ class UpdateStudentWindow(QDialog):
         self.input_box.resize(200, 30)
         self.input_box.move(350, 107)
 
-        # Delete Button
+        # Update Button
         self.Update_student_button.resize(100, 50)
         self.Update_student_button.move(245, 300)
         self.Update_student_button.setText("Update")
-        self.Update_student_button.clicked.connect(self.updates_student_name)
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
         self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
-        self.back_button.clicked.connect(self.back_button_clicked)
 
         # Signals / Slots
         self.back_button.clicked.connect(self.back_button_clicked)
+        self.Update_student_button.clicked.connect(self.updates_student_name)
+
 
     def back_button_clicked(self):
         self.previous_window = AccessStudentWindow("Update")
@@ -798,14 +1195,28 @@ class UpdateStudentWindow(QDialog):
         self.close()
 
     def updates_student_name(self):
-        self.new_student_name = self.input_box.text()
         conn = sqlite3.connect('north_star_school_database.db')
         cursor = conn.cursor()
-        cursor.execute("""UPDATE student SET student_name = ?
-            WHERE student_id = ?
-                                                            """, (self.new_student_name, student.studentid))
 
-        # print(studentid)
+        self.new_student_name = self.input_box.text()
+        self.input_box.textChanged.connect(self.txt_change)
+
+        if all((x.isalpha() or x.isspace()) for x in self.new_student_name):
+            cursor.execute("""UPDATE student SET student_name = ?
+                WHERE student_id = ?
+                                                                """, (self.new_student_name.title(), student.studentid))
+            self.success_mes = popup.SuccessPopUp(f"You have successfully updated {student.studentid}'s name to: {self.new_student_name.title()}")
+            self.success_mes.show()
+        else:
+            self.error_mes = popup.ErrorPopUp("Please enter a correct Name")
+            self.error_mes.show()
+            self.input_box.setStyleSheet(
+                "color: #fb0410; border-width: 0px; border-style: solid; border-color: white; border-bottom-color: red; border-bottom-width: 2px;")
+
 
         conn.commit()
         conn.close()
+
+    def txt_change(self):
+        self.input_box.setStyleSheet(
+            "color: black; border: 0px")
