@@ -5,7 +5,7 @@ from PyQt5.QtCore import *
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QPushButton, QLineEdit, QLabel, \
     QWidget, QDialog, QSizePolicy, QGridLayout, QTableWidget, QTableWidgetItem, \
-    QVBoxLayout
+    QVBoxLayout, QDesktopWidget
 import popup
 import gui
 
@@ -128,11 +128,12 @@ class PrintWindow(QWidget):
 
         self.student_id = QLabel(self)
         self.student_name = QLabel(self)
-        self.table_info = QTableWidget()
+        self.table_info = QTableWidget(self)
         self.student_id_label = QLabel(self)
         self.student_name_label = QLabel(self)
         self.student_semester_credit = QLabel(self)
         self.student_semester_credit_label = QLabel(self)
+        self.back_button = QPushButton(self)
 
         self.setup_ui()
 
@@ -142,21 +143,27 @@ class PrintWindow(QWidget):
         self.student_id_label.setText("ID:")
         self.student_id_label.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_id_label.adjustSize()
-        self.student_id_label.move(40, 50)
+        self.student_id_label.move(40, 60)
         self.student_id.setText(student.studentid)
         self.student_id.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_id.adjustSize()
-        self.student_id.move(self.student_id_label.width()+45, 50)
+        self.student_id.move(self.student_id_label.width()+45, 60)
 
         self.student_name_label.setText("Name:")
         self.student_name_label.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_name_label.adjustSize()
-        self.student_name_label.move(40, 85)
+        self.student_name_label.move(40, 95)
         self.student_name.setText(self.query_student_id_and_name())
         self.student_name.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_name.adjustSize()
-        self.student_name.move(self.student_name_label.width()+45, 85)
-        self.setWindowTitle(f"{self.student_name} Semester Information")
+        self.student_name.move(self.student_name_label.width()+45, 95)
+        self.setWindowTitle(f"{self.student_name.text()} Semester Information")
+
+        self.back_button.resize(50, 35)
+        self.back_button.move(10, 10)
+        self.back_button.setText('Back')
+        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.clicked.connect(self.back_button_clicked)
 
 
         self.totalcredits = 0
@@ -201,12 +208,12 @@ class PrintWindow(QWidget):
         self.student_semester_credit_label.setText("Registered credits:")
         self.student_semester_credit_label.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_semester_credit_label.adjustSize()
-        self.student_semester_credit_label.move(40, 120)
+        self.student_semester_credit_label.move(40, 130)
 
         self.student_semester_credit.setText(str(self.totalcredits))
         self.student_semester_credit.setFont(QFont('Papyrus', 16, QFont.Bold))
         self.student_semester_credit.adjustSize()
-        self.student_semester_credit.move(self.student_semester_credit_label.width()+45, 120)
+        self.student_semester_credit.move(self.student_semester_credit_label.width()+45, 130)
 
         header = self.table_info.horizontalHeader()
         print(self.table_info.columnCount()-1)
@@ -220,6 +227,10 @@ class PrintWindow(QWidget):
         self.layout.addWidget(self.table_info)
         self.setLayout(self.layout)
 
+    def back_button_clicked(self):
+        self.previous_window = MaintainStudentAccount()
+        self.previous_window.show()
+        self.close()
 
     def query_course_descr_credit(self, course_id):
         conn = sqlite3.connect('north_star_school_database.db')
@@ -441,13 +452,11 @@ class CourseFlagsWindow(QWidget):
         self.no_flags_message = QLabel(self)
         self.no_flags_message.setFont(QFont('Papyrus', 15, QFont.Bold))
         self.no_flags_message.setText('The registered course has no flags\nin the student account')
-        # self.no_flags_message.move((600 - self.no_flags_message.width()) / 2, 195)
         self.no_flags_message.setAlignment(Qt.AlignCenter)
-        self.no_flags_message.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.layout = QGridLayout(self)
-        self.layout.addWidget(self.no_flags_message, 0, 0)
+        self.no_flags_message.adjustSize()
+        print(self.no_flags_message.width())
+        self.no_flags_message.move((600-self.no_flags_message.width())/2, 180)
 
-        self.setLayout(self.layout)
 
     @pyqtSlot(int)
     def remove_flags(self, remove_flag_value):
@@ -735,7 +744,8 @@ class AddCourseToStudentScheduleWindow(QWidget):
                     self.check_if_course_is_registered_to_student = 0
                     for course in self.courses:
                         course = course[0]
-                        if self.course_section_id.upper() == course:
+                        course = course[:len(course)-3]
+                        if self.course_section_id.upper()[:len(self.course_section_id)-3] == course:
                             self.check_if_course_is_registered_to_student = 1
                     if self.check_if_course_is_registered_to_student == 0:
                         self.look_up_new_course_credits = cursor.execute("""SELECT credit FROM course WHERE course_id = ?""", (self.course_id_text.upper(),))
@@ -754,6 +764,9 @@ class AddCourseToStudentScheduleWindow(QWidget):
                             self.flag = 0
                         self.add_course_section_to_schedule = cursor.execute("""INSERT INTO enrollment (student_id, course_section_id, flags) VALUES
                         (?,?,?)""", (student.studentid, self.course_section_id.upper(), self.flag))
+                        self.success_mes = popup.SuccessPopUp(
+                            f"You have successfully added {self.course_section_id.upper()} \n to {student.studentid} schedule")
+                        self.success_mes.show()
                     else:
                         self.error_mes = popup.ErrorPopUp(
                             f"Course is already registered to student schedule!\nPlease enter a new course ID and section ID")
