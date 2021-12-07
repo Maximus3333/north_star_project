@@ -54,3 +54,4 @@ class SuccessPopUp(QDialog):
         self.setWindowTitle(self.window_title)
 
         self.show()
+

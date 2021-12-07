@@ -57,7 +57,7 @@ class StudentMainWindow(QWidget):
 
         # Title
         self.title.setText("Please select a Student option")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -86,7 +86,7 @@ class StudentMainWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.add_student_button.clicked.connect(self.student_being_added_popup)
@@ -141,20 +141,20 @@ class PrintWindow(QWidget):
         self.resize(1000, 500)
 
         self.student_id_label.setText("ID:")
-        self.student_id_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_id_label.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_id_label.adjustSize()
         self.student_id_label.move(40, 60)
         self.student_id.setText(student.studentid)
-        self.student_id.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_id.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_id.adjustSize()
         self.student_id.move(self.student_id_label.width()+45, 60)
 
         self.student_name_label.setText("Name:")
-        self.student_name_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_name_label.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_name_label.adjustSize()
         self.student_name_label.move(40, 95)
         self.student_name.setText(self.query_student_id_and_name())
-        self.student_name.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_name.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_name.adjustSize()
         self.student_name.move(self.student_name_label.width()+45, 95)
         self.setWindowTitle(f"{self.student_name.text()} Semester Information")
@@ -162,7 +162,7 @@ class PrintWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(10, 10)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
 
@@ -206,12 +206,12 @@ class PrintWindow(QWidget):
             x = 0
 
         self.student_semester_credit_label.setText("Registered credits:")
-        self.student_semester_credit_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_semester_credit_label.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_semester_credit_label.adjustSize()
         self.student_semester_credit_label.move(40, 130)
 
         self.student_semester_credit.setText(str(self.totalcredits))
-        self.student_semester_credit.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.student_semester_credit.setFont(QFont('Georgia', 16, QFont.Bold))
         self.student_semester_credit.adjustSize()
         self.student_semester_credit.move(self.student_semester_credit_label.width()+45, 130)
 
@@ -318,7 +318,7 @@ class MaintainStudentAccount(QDialog):
         self.resize(600, 500)
         self.setWindowTitle("StudentPortalWindow")
         self.title.setText("Choose a Student Option Below")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.move((600-self.title.width())/2, 80)
 
@@ -330,7 +330,7 @@ class MaintainStudentAccount(QDialog):
         self.add_course_to_schedule_btn.move(60, 250)
         self.add_course_to_schedule_btn.clicked.connect(self.add_course_student_schedule_pop_up)
 
-        self.print_student_info_btn.setText('Add Preview \n Student Info')
+        self.print_student_info_btn.setText('Preview \n Student Info')
         self.print_student_info_btn.resize(130, 60)
         self.print_student_info_btn.move(self.width() - (self.print_student_info_btn.width() + 60), 250)
         self.print_student_info_btn.clicked.connect(self.print_student_info)
@@ -345,17 +345,31 @@ class MaintainStudentAccount(QDialog):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
 
         self.show()
 
     def print_student_info(self):
-        self.window = PrintWindow()
-        self.window.show()
-        self.close()
-
+        conn = sqlite3.connect('north_star_school_database.db')
+        cursor = conn.cursor()
+        try:
+            self.exist_or_not = cursor.execute(
+                """SELECT EXISTS (SELECT 1 FROM enrollment WHERE student_id = ?)""",
+                (student.studentid,)).fetchone()[0]
+            if self.exist_or_not == 1:
+                self.window = PrintWindow()
+                self.window.show()
+                self.close()
+            else:
+                self.error_mes = popup.ErrorPopUp(
+                    f"{student.studentid} doesnt have any courses registered")
+                self.error_mes.show()
+        except Exception as e:
+            print(e)
+        conn.commit()
+        conn.close()
     def add_course_student_schedule_pop_up(self):
         self.window = AddCourseToStudentScheduleWindow()
         self.window.show()
@@ -396,7 +410,7 @@ class CourseFlagsWindow(QWidget):
         self.setWindowTitle(self.window_title)
 
         self.course_section_id_label.setText('SectionID:  ' + self.course_section_id)
-        self.course_section_id_label.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.course_section_id_label.setFont(QFont('Georgia', 16, QFont.Bold))
         self.course_section_id_label.adjustSize()
         print(self.flags)
         self.course_section_id_label.move((600-self.course_section_id_label.width())/2, 50)
@@ -404,7 +418,7 @@ class CourseFlagsWindow(QWidget):
 #       0 == no flags 1 == exceeds credit limit 2 == exceeds course capacity
         if self.flags == 3:
             self.credit_flag.move(50, 195)
-            self.credit_flag.setFont(QFont('Papyrus', 14, QFont.Bold))
+            self.credit_flag.setFont(QFont('Georgia', 14, QFont.Bold))
             self.credit_flag.setText('Course exceeds student credit limit')
             self.remove_credit_flag_btn.setText('Remove')
             self.remove_credit_flag_btn.adjustSize()
@@ -412,21 +426,21 @@ class CourseFlagsWindow(QWidget):
 
 
             self.capacity_flag.move(50, 295)
-            self.capacity_flag.setFont(QFont('Papyrus', 14, QFont.Bold))
+            self.capacity_flag.setFont(QFont('Georgia', 14, QFont.Bold))
             self.capacity_flag.setText('Course exceeds section capacity limit')
             self.remove_capacity_flag_btn.setText('Remove')
             self.remove_capacity_flag_btn.adjustSize()
             self.remove_capacity_flag_btn.move(450, 300)
         elif self.flags == 1:
             self.credit_flag.move(50, 195)
-            self.credit_flag.setFont(QFont('Papyrus', 14, QFont.Bold))
+            self.credit_flag.setFont(QFont('Georgia', 14, QFont.Bold))
             self.credit_flag.setText('Course exceeds student credit limit')
             self.remove_credit_flag_btn.setText('Remove')
             self.remove_credit_flag_btn.adjustSize()
             self.remove_credit_flag_btn.move(450, 200)
         elif self.flags == 2:
             self.capacity_flag.move(50, 195)
-            self.capacity_flag.setFont(QFont('Papyrus', 14, QFont.Bold))
+            self.capacity_flag.setFont(QFont('Georgia', 14, QFont.Bold))
             self.capacity_flag.setText('Course exceeds section capacity limit')
             self.remove_capacity_flag_btn.setText('Remove')
             self.remove_capacity_flag_btn.adjustSize()
@@ -442,7 +456,7 @@ class CourseFlagsWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         self.back_button.clicked.connect(self.back_button_clicked)
 
@@ -450,7 +464,7 @@ class CourseFlagsWindow(QWidget):
 
     def show_no_flags_mess(self):
         self.no_flags_message = QLabel(self)
-        self.no_flags_message.setFont(QFont('Papyrus', 15, QFont.Bold))
+        self.no_flags_message.setFont(QFont('Georgia', 15, QFont.Bold))
         self.no_flags_message.setText('The registered course has no flags\nin the student account')
         self.no_flags_message.setAlignment(Qt.AlignCenter)
         self.no_flags_message.adjustSize()
@@ -531,7 +545,7 @@ class AccessStudentCourseFlagsWindow(QWidget):
 
         # Title
         self.title.setText("Enter Course Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -554,13 +568,13 @@ class AccessStudentCourseFlagsWindow(QWidget):
         self.access_button.resize(100, 75)
         self.access_button.move(450, 375)
         self.access_button.setText('Access')
-        self.access_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.access_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.back_button.clicked.connect(self.back_button_clicked)
@@ -653,7 +667,7 @@ class AddCourseToStudentScheduleWindow(QWidget):
 
         # Title
         self.title.setText("Enter Course Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -676,14 +690,14 @@ class AddCourseToStudentScheduleWindow(QWidget):
         self.add_button.resize(100, 75)
         self.add_button.move(450, 375)
         self.add_button.setText('Add')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.add_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.add_button.clicked.connect(self.add_course_to_student_schedule)
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.back_button.clicked.connect(self.back_button_clicked)
@@ -831,10 +845,10 @@ class DeleteStudentWindow(QDialog):
 
         # Title
         self.title.setText("Enter Student ID:")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
-        self.title.move(15, 100)
+        self.title.move(35, 110)
 
         # Input Box
         self.input_box.resize(200, 30)
@@ -849,7 +863,7 @@ class DeleteStudentWindow(QDialog):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
         # Signals / Slots
@@ -920,25 +934,25 @@ class AccessStudentWindow(QWidget):
 
         # Title
         self.title.setText("Enter Existing Student:")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
-        self.title.move(15, 100)
+        self.title.move(25, 110)
 
         # Input Box
         self.input_box.resize(200, 30)
         self.input_box.move(350, 107)
 
         # Access Sections Button
-        self.access_student_button.resize(100, 50)
         self.access_student_button.move(245, 300)
         self.access_student_button.setText("Access Student")
+        self.access_student_button.adjustSize()
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
         # Signals / Slots
@@ -1055,7 +1069,7 @@ class AddStudentWindow(QWidget):
 
         # Title
         self.title.setText("Enter Student Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -1078,13 +1092,13 @@ class AddStudentWindow(QWidget):
         self.add_button.resize(100, 75)
         self.add_button.move(450, 375)
         self.add_button.setText('Add')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.add_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.back_button.clicked.connect(self.back_button_clicked)
@@ -1177,7 +1191,7 @@ class UpdateStudentWindow(QDialog):
 
         # Title
         self.title.setText("Enter new Student Name:")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(15, 100)
@@ -1195,7 +1209,7 @@ class UpdateStudentWindow(QDialog):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals / Slots
         self.back_button.clicked.connect(self.back_button_clicked)

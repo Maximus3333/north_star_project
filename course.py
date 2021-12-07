@@ -11,6 +11,21 @@ import popup
 import sys
 
 
+# class Course():
+#     def __init__(self):
+#         self.course_id = "none"
+#         self.credits = "none"
+#         self.course_desc = "none"
+
+
+# class Course_Section():
+#     def __init__(self):
+#         self.course_id = "none"
+#         self.section_id = "none"
+#         self.instructor_id = "none"
+#         self.section_cap = 0
+
+
 class CourseMainWindow(QWidget):
     def __init__(self):
         super(CourseMainWindow, self).__init__()
@@ -31,7 +46,7 @@ class CourseMainWindow(QWidget):
 
         # Title
         self.title.setText("Please select a Course option")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -55,7 +70,7 @@ class CourseMainWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.add_course_or_section_button.clicked.connect(self.add_button_clicked)
@@ -82,7 +97,6 @@ class CourseMainWindow(QWidget):
         self.delete_section_window = DeleteSectionWindow()
         self.delete_section_window.show()
         self.close()
-    # need to add buttons to other screens
 
 
 class CourseSectionAddWindow(QWidget):
@@ -104,7 +118,7 @@ class CourseSectionAddWindow(QWidget):
 
         # Title
         self.title.setText("Add Course or Section")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -123,7 +137,7 @@ class CourseSectionAddWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.add_section_button.clicked.connect(self.add_section_clicked)
@@ -170,7 +184,7 @@ class CourseAddWindow(QWidget):
 
         # Title
         self.title.setText("Enter Course Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -200,16 +214,58 @@ class CourseAddWindow(QWidget):
         self.add_button.resize(100, 75)
         self.add_button.move(450, 350)
         self.add_button.setText('Add')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.add_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
+        self.add_button.clicked.connect(self.add_button_clicked)
         self.back_button.clicked.connect(self.back_button_clicked)
+
+    def errorPopUp(self, error):
+        self.popup = popup.ErrorPopUp(error)
+
+    def successPopUp(self, success):
+        self.popup = popup.SuccessPopUp(success)
+
+    def add_button_clicked(self):
+        # Storing input
+        courseIDInput = self.course_id_textbox.text()
+        courseDescriptionInput = self.course_desc_textbox.text()
+        courseCreditsInput = self.credits_textbox.text()
+
+        # Database management
+
+        conn = sqlite3.connect('north_star_school_database.db')
+        c = conn.cursor()
+
+        try:
+            c.execute("SELECT * FROM course WHERE course_id = ?", (courseIDInput,))
+            courseIDCheck = c.fetchall()
+        except Exception as e:
+            pass
+
+        try:
+            c.execute("SELECT * FROM course WHERE course_desc=?", (courseDescriptionInput,))
+            courseDescCheck = c.fetchall()
+        except Exception as e:
+            pass
+
+        if len(courseIDCheck) == 0 and len(courseDescCheck) == 0:
+            try:
+                c.execute("INSERT INTO course VALUES (?, ?, ?)", (courseIDInput, courseDescriptionInput, courseCreditsInput))
+                self.successPopUp(f"Course successfully added")
+            except Exception as e:
+                pass
+        else:
+            self.errorPopUp(f"Unable to add course to database")
+
+        conn.commit()
+        conn.close()
 
     def back_button_clicked(self):
         self.previous_window = CourseSectionAddWindow()
@@ -243,13 +299,13 @@ class SectionAddWindow(QWidget):
 
         # Title
         self.title.setText("Enter Section Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
 
         # Course ID Entry
-        self.course_id_label.setText("Enter Section ID: ")
+        self.course_id_label.setText("Existing Course ID: ")
         self.course_id_label.resize(200, 35)
         self.course_id_label.move(100, 150)
         self.course_id_textbox.resize(150, 35)
@@ -280,16 +336,61 @@ class SectionAddWindow(QWidget):
         self.add_button.resize(100, 75)
         self.add_button.move(450, 375)
         self.add_button.setText('Add')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.add_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
+        self.add_button.clicked.connect(self.add_button_clicked)
         self.back_button.clicked.connect(self.back_button_clicked)
+
+    def errorPopUp(self, error):
+        self.popup = popup.ErrorPopUp(error)
+
+    def successPopUp(self, success):
+        self.popup = popup.SuccessPopUp(success)
+
+    def add_button_clicked(self):
+        # Storing input
+        courseIDInput = self.course_id_textbox.text()
+        sectionIDInput = self.section_id_textbox.text()
+        instructorInput = self.instructor_textbox.text()
+        capacityInput = self.capacity_textbox.text()
+
+        # Database management
+        conn = sqlite3.connect('north_star_school_database.db')
+        c = conn.cursor()
+
+        try:
+            c.execute("SELECT * FROM course WHERE course_id = ?", (courseIDInput,))
+            courseIDCheck = c.fetchall()
+        except Exception as e:
+            print(e)
+            pass
+
+        try:
+            c.execute("SELECT * FROM section WHERE course_section_id=?", (sectionIDInput,))
+            SectionIDCheck = c.fetchall()
+        except Exception as e:
+            print(e)
+            pass
+
+        if len(SectionIDCheck) == 0 and len(courseIDCheck) != 0:
+            try:
+                c.execute("INSERT INTO section VALUES (?, ?, ?, ?)", (courseIDInput+sectionIDInput, courseIDInput, instructorInput, capacityInput))
+                self.successPopUp(f"Section successfully added")
+            except Exception as e:
+                print(e)
+                pass
+        else:
+            self.errorPopUp(f"Unable to add section to database")
+
+        conn.commit()
+        conn.close()
 
     def back_button_clicked(self):
         self.previous_window = CourseSectionAddWindow()
@@ -316,7 +417,7 @@ class CourseSectionUpdateWindow(QWidget):
 
         # Title
         self.title.setText("Update Course or Section")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -335,7 +436,7 @@ class CourseSectionUpdateWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.update_course_button.clicked.connect(self.add_course_clicked)
@@ -357,6 +458,7 @@ class CourseSectionUpdateWindow(QWidget):
         self.section_update_window.show()
         self.close()
 
+
 class CourseUpdateWindow(QWidget):
     def __init__(self):
         super(CourseUpdateWindow, self).__init__()
@@ -368,7 +470,7 @@ class CourseUpdateWindow(QWidget):
         self.course_id_textbox = QLineEdit(self)
         self.course_desc_textbox = QLineEdit(self)
         self.credits_textbox = QLineEdit(self)
-        self.add_button = QPushButton(self)
+        self.update_button = QPushButton(self)
         self.back_button = QPushButton(self)
 
         self.setup_ui()
@@ -381,7 +483,7 @@ class CourseUpdateWindow(QWidget):
 
         # Title
         self.title.setText("Update Course Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -408,19 +510,49 @@ class CourseUpdateWindow(QWidget):
         self.credits_textbox.move(250, 300)
 
         # Add Button
-        self.add_button.resize(100, 75)
-        self.add_button.move(450, 350)
-        self.add_button.setText('Update')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.update_button.resize(100, 75)
+        self.update_button.move(450, 350)
+        self.update_button.setText('Update')
+        self.update_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.back_button.clicked.connect(self.back_button_clicked)
+        self.update_button.clicked.connect(self.update_button_clicked)
+
+    def update_button_clicked(self):
+        # Storing input
+        courseIDInput = self.course_id_textbox.text()
+        courseDescInput = self.course_desc_textbox.text()
+        creditInput = self.credits_textbox.text()
+
+        # Database management
+        conn = sqlite3.connect('north_star_school_database.db')
+        c = conn.cursor()
+
+        try:
+            query = f"""SELECT EXISTS(SELECT 1 FROM course WHERE course_id = ?)"""
+            c.execute(query, (courseIDInput,))
+            flag = c.fetchone()[0]
+            if flag == 1:
+                query = f"""UPDATE course SET course_desc = '{courseDescInput}', credit = '{creditInput}' WHERE course_id = ?"""
+                print(query, (courseIDInput,))
+                c.execute(query, (courseIDInput,))
+                self.popup = popup.SuccessPopUp(f"Course successfully updated")
+            else:
+                self.popup = popup.ErrorPopUp(f"Course does not exist")
+                # make a popup
+        except Exception as e:
+            print(e)
+            pass
+
+        conn.commit()
+        conn.close()
 
     def back_button_clicked(self):
         self.previous_window = CourseSectionUpdateWindow()
@@ -441,7 +573,7 @@ class SectionUpdateWindow(QWidget):
         self.section_id_textbox = QLineEdit(self)
         self.instructor_textbox = QLineEdit(self)
         self.capacity_textbox = QLineEdit(self)
-        self.add_button = QPushButton(self)
+        self.update_button = QPushButton(self)
         self.back_button = QPushButton(self)
 
         self.setup_ui()
@@ -454,7 +586,7 @@ class SectionUpdateWindow(QWidget):
 
         # Title
         self.title.setText("Update Section Information")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -488,24 +620,55 @@ class SectionUpdateWindow(QWidget):
         self.capacity_textbox.move(250, 300)
 
         # Add Button
-        self.add_button.resize(100, 75)
-        self.add_button.move(450, 375)
-        self.add_button.setText('Add')
-        self.add_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.update_button.resize(100, 75)
+        self.update_button.move(450, 375)
+        self.update_button.setText('Update')
+        self.update_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Back Button
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
 
         # Signals/Slots
         self.back_button.clicked.connect(self.back_button_clicked)
+        self.update_button.clicked.connect(self.update_button_clicked)
+
+    def update_button_clicked(self):
+        # Storing input
+        sectionIDInput = self.section_id_textbox.text()
+        courseIDInput = self.course_id_textbox.text()
+        instructorIDInput = self.instructor_textbox.text()
+        capacityInput = self.capacity_textbox.text()
+
+        # Database management
+        conn = sqlite3.connect('north_star_school_database.db')
+        c = conn.cursor()
+        c.execute("""PRAGMA foreign_keys = ON""")
+        try:
+            query = f"""SELECT EXISTS(SELECT 1 FROM section WHERE course_section_id = ?)"""
+            c.execute(query, (courseIDInput+sectionIDInput,))
+            flag = c.fetchone()[0]
+            if flag == 1:
+                query = f"""UPDATE section SET instructor_id = '{instructorIDInput}', capacity = '{capacityInput}' WHERE course_section_id = ?"""
+                print(query, (courseIDInput+sectionIDInput,))
+                c.execute(query, (courseIDInput+sectionIDInput,))
+                self.popup = popup.SuccessPopUp(f"Section successfully updated")
+            else:
+                self.popup = popup.ErrorPopUp(f"Section does not exist")
+                # make a popup
+        except Exception as e:
+            print(e)
+            pass
+        conn.commit()
+        conn.close()
 
     def back_button_clicked(self):
         self.previous_window = CourseSectionUpdateWindow()
         self.previous_window.show()
         self.close()
+
 
 class DeleteSectionWindow(QWidget):
     def __init__(self):
@@ -525,7 +688,7 @@ class DeleteSectionWindow(QWidget):
 
         # Title
         self.title.setText("Delete Section")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
         self.title.move(int((window_width - self.title.width()) / 2), 100)
@@ -539,10 +702,10 @@ class DeleteSectionWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
-        #Signals/Slots
+        # Signals/Slots
         self.delete_section_button.clicked.connect(self.delete_section_button_clicked)
         self.back_button.clicked.connect(self.back_button_clicked)
 
@@ -552,63 +715,68 @@ class DeleteSectionWindow(QWidget):
         self.close()
 
     def delete_section_button_clicked(self):
-        self.access_sections_window = AccessSectionsWindow()
-        self.access_sections_window.show()
+        # self.access_sections_window = AccessSectionsWindow() #skipping this window
+        # self.access_sections_window.show()
+        self.delete_sections_window = SectionDeletionWindow()
+        self.delete_sections_window.show()
         self.close()
 
-class AccessSectionsWindow(QWidget):
-    def __init__(self):
-        super(AccessSectionsWindow, self).__init__()
+# This window serves no good purpose in this sprint, it just makes it harder to manage the course id and section id
+# class AccessSectionsWindow(QWidget):
+#     def __init__(self):
+#         super(AccessSectionsWindow, self).__init__()
+#
+#         self.title = QLabel(self)
+#         self.access_sections_button = QPushButton(self)
+#         self.input_box = QLineEdit(self)
+#         self.back_button = QPushButton(self)
+#
+#         self.setup_ui()
+#
+#     def setup_ui(self):
+#         # Window
+#         self.resize(600, 500)
+#         window_width = int(self.frameGeometry().width())
+#         self.setWindowTitle("Access Sections Window")
+#
+#         # Title
+#         self.title.setText("Enter Existing Course:")
+#         self.title.setFont(QFont('Georgia', 16, QFont.Bold))
+#         self.title.adjustSize()
+#         self.title.setAlignment(QtCore.Qt.AlignCenter)
+#         self.title.move(15, 100)
+#
+#         # Input Box
+#         self.input_box.resize(200, 30)
+#         self.input_box.move(350, 107)
+#
+#         # Access Sections Button
+#         self.access_sections_button.resize(100, 50)
+#         self.access_sections_button.move(245, 300)
+#         self.access_sections_button.setText("Access Sections")
+#
+#         # Back Button
+#         self.back_button.resize(50, 35)
+#         self.back_button.move(30, 30)
+#         self.back_button.setText('Back')
+#         self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
+#         self.back_button.clicked.connect(self.back_button_clicked)
+#
+#         # Signals / Slots
+#         self.access_sections_button.clicked.connect(self.access_sections_button_clicked)
+#         self.back_button.clicked.connect(self.back_button_clicked)
+#
+#     def back_button_clicked(self):
+#         self.previous_window = DeleteSectionWindow()
+#         self.previous_window.show()
+#         self.close()
+#
+#     def access_sections_button_clicked(self):
+#         self.section_deletion_window = SectionDeletionWindow()
+#         self.section_deletion_window.show()
+#         self.close()
+#         return self.input_box.text()
 
-        self.title = QLabel(self)
-        self.access_sections_button = QPushButton(self)
-        self.input_box = QLineEdit(self)
-        self.back_button = QPushButton(self)
-
-        self.setup_ui()
-
-    def setup_ui(self):
-        # Window
-        self.resize(600, 500)
-        window_width = int(self.frameGeometry().width())
-        self.setWindowTitle("Access Sections Window")
-
-        # Title
-        self.title.setText("Enter Existing Course:")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
-        self.title.adjustSize()
-        self.title.setAlignment(QtCore.Qt.AlignCenter)
-        self.title.move(15, 100)
-
-        # Input Box
-        self.input_box.resize(200, 30)
-        self.input_box.move(350, 107)
-
-        # Access Sections Button
-        self.access_sections_button.resize(100, 50)
-        self.access_sections_button.move(245, 300)
-        self.access_sections_button.setText("Access Sections")
-
-        # Back Button
-        self.back_button.resize(50, 35)
-        self.back_button.move(30, 30)
-        self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
-        self.back_button.clicked.connect(self.back_button_clicked)
-
-        #Signals / Slots
-        self.access_sections_button.clicked.connect(self.access_sections_button_clicked)
-        self.back_button.clicked.connect(self.back_button_clicked)
-
-    def back_button_clicked(self):
-        self.previous_window = DeleteSectionWindow()
-        self.previous_window.show()
-        self.close()
-
-    def access_sections_button_clicked(self):
-        self.section_deletion_window = SectionDeletionWindow()
-        self.section_deletion_window.show()
-        self.close()
 
 class SectionDeletionWindow(QWidget):
     def __init__(self):
@@ -616,8 +784,13 @@ class SectionDeletionWindow(QWidget):
 
         self.title = QLabel(self)
         self.section_deletion_button = QPushButton(self)
-        self.input_box = QLineEdit(self)
+        self.section_id_label = QLabel(self)
+        self.course_id_label = QLabel(self)
+        self.section_id = QLineEdit(self)
+        self.course_id = QLineEdit(self)
         self.back_button = QPushButton(self)
+
+        # self.accessed_course = access_sections_window.access_sections_button_clicked() # this is hell to try to get working
 
         self.setup_ui()
 
@@ -628,15 +801,29 @@ class SectionDeletionWindow(QWidget):
         self.setWindowTitle("Section Deletion Window")
 
         # Title
-        self.title.setText("Enter Section ID:")
-        self.title.setFont(QFont('Papyrus', 16, QFont.Bold))
+        self.title.setText("Delete Section")
+        self.title.setFont(QFont('Georgia', 16, QFont.Bold))
         self.title.adjustSize()
         self.title.setAlignment(QtCore.Qt.AlignCenter)
-        self.title.move(15, 100)
+        self.title.move(int((window_width - self.title.width()) / 2), 100)
 
-        # Input Box
-        self.input_box.resize(200, 30)
-        self.input_box.move(350, 107)
+        # Course label
+        self.course_id_label.resize(200, 35)
+        self.course_id_label.setText("Enter Course ID:")
+        self.course_id_label.move(50, 175)
+
+        # Section label
+        self.section_id_label.resize(200, 35)
+        self.section_id_label.setText("Enter Section ID:")
+        self.section_id_label.move(50, 225)
+
+        # Course ID Box
+        self.course_id.resize(200, 30)
+        self.course_id.move(350, 175)
+
+        # Section ID Box
+        self.section_id.resize(200, 30)
+        self.section_id.move(350, 225)
 
         # Delete Button
         self.section_deletion_button.resize(100, 50)
@@ -647,13 +834,42 @@ class SectionDeletionWindow(QWidget):
         self.back_button.resize(50, 35)
         self.back_button.move(30, 30)
         self.back_button.setText('Back')
-        self.back_button.setFont(QFont('Papyrus', 7, QFont.Bold))
+        self.back_button.setFont(QFont('Georgia', 7, QFont.Bold))
         self.back_button.clicked.connect(self.back_button_clicked)
 
-        #Signals / Slots
+        # Signals / Slots
         self.back_button.clicked.connect(self.back_button_clicked)
+        self.section_deletion_button.clicked.connect(self.delete_button_clicked)
+
+    def delete_button_clicked(self):
+        # Storing input
+        sectionIDInput = self.section_id.text()
+        courseIDInput = self.course_id.text()
+
+        # Database management
+        conn = sqlite3.connect('north_star_school_database.db')
+        c = conn.cursor()
+        c.execute("""PRAGMA foreign_keys = ON""")
+        try:
+            query = f"""SELECT EXISTS(SELECT 1 FROM section WHERE course_section_id = ?)"""
+            c.execute(query, (courseIDInput+sectionIDInput,))
+            flag = c.fetchone()[0]
+            if flag == 1:
+                query = f"""DELETE FROM section WHERE course_section_id = ?"""
+                print(query, (courseIDInput+sectionIDInput,))
+                c.execute(query, (courseIDInput+sectionIDInput,))
+                self.popup = popup.SuccessPopUp(f"Section sucessfully deleted")
+            else:
+                self.popup = popup.ErrorPopUp(f"Section does not exist")
+                # make a popup
+        except Exception as e:
+            print(e)
+            pass
+        conn.commit()
+        conn.close()
 
     def back_button_clicked(self):
-        self.previous_window = AccessSectionsWindow()
+        # self.previous_window = AccessSectionsWindow() # skipping this window
+        self.previous_window = DeleteSectionWindow()
         self.previous_window.show()
         self.close()
